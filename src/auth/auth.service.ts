@@ -103,25 +103,55 @@ async forgotPassword(email: string) {
   }
 
   // Step 2: Generate a 4-digit reset code
-  const resetCode = Math.floor(1000 + Math.random() * 9000); // Generates a 4-digit number between 1000 and 9999
+  const resetCode = Math.floor(1000 + Math.random() * 9000);
 
   // Step 3: Set an expiration time for the reset code
   const expiryDate = new Date();
-  expiryDate.setHours(expiryDate.getHours() + 1); // Code expires in 1 hour
+  expiryDate.setHours(expiryDate.getHours() + 1);
 
   // Step 4: Store the reset code in the ResetToken collection
   await this.ResetTokenModel.create({
-    userId: user._id.toString(), // Ensure userId is stored as a string
-    token: resetCode.toString(), // Convert number to string
+    userId: user._id.toString(),
+    token: resetCode.toString(),
     expiryDate,
   });
 
-  // Step 5: Send the reset code via email
-  await this.mailService.sendMail(email, "Password Reset Code", `Your password reset code is: ${resetCode}`);
+  // Step 5: Prepare the styled HTML email content
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #f9f9f9;">
+      <h2 style="color: #333;">Hello ${user.name || 'User'},</h2>
+      <p style="font-size: 16px; color: #555;">
+        We received a request to reset your password for your MoodyMap account. Please use the following code to reset your password:
+      </p>
+      <div style="text-align: center; margin: 20px 0;">
+        <span style="display: inline-block; font-size: 24px; font-weight: bold; color: #007bff; border: 1px dashed #007bff; padding: 10px 20px; border-radius: 5px;">
+          ${resetCode}
+        </span>
+      </div>
+      <p style="font-size: 14px; color: #777;">
+        This code is valid for the next 1 hour. If you did not request this, please ignore this email.
+      </p>
+      <p style="font-size: 14px; color: #333; margin-top: 20px;">
+        Thank you,<br>
+        <strong>The MoodyMap Team</strong>
+      </p>
+    </div>
+  `;
 
-  // Step 6: Return a success message
-  return { message: `Password reset code sent to ${email}` };
+  // Step 6: Send the reset code via email
+  await this.mailService.sendMail(
+    email,
+    'Password Reset Code',
+    htmlContent
+  );
+
+  // Step 7: Return a success message
+  return {
+    message: `Password reset code sent to ${email}`,
+    userId: user._id,
+  };
 }
+
 
 // resetPassword Method
 async resetPassword(userId: string, newPassword: string, resetCode: string) {
@@ -218,6 +248,4 @@ async resetPassword(userId: string, newPassword: string, resetCode: string) {
     // Return the userId as a JSON object
     return { userId: user._id.toString() };  // Wrap the user ID in an object
   }
-  
-
 }
