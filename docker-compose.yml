@@ -1,0 +1,54 @@
+
+
+name: moodymap-project-dam
+
+services:
+  app:
+    build: .
+    container_name: moodymap-nestjs-backend
+    image: achreflajmi/moodymap-nestjs-backend:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - MONGO_URL=${MONGO_URL}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GMAIL_USER=${GMAIL_USER}
+      - GMAIL_PASS=${GMAIL_PASS}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PYTHON_MODEL_URL=${PYTHON_MODEL_URL}  # Add Python model URL
+    env_file:
+      - .env
+    networks:
+      - MoodymapNetwork
+    depends_on:
+      - mongodb
+      - model
+
+  model:
+    build:
+      context: ./model  # Updated to relative path of 'model' directory
+      dockerfile: Dockerfile.model
+    container_name: model-container
+    image: achreflajmi/moodymap-python-model:latest
+    ports:
+      - "5000:5000"
+    networks:
+      - MoodymapNetwork
+
+  mongodb:
+    image: mongo:5.0
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    networks:
+      - MoodymapNetwork
+    volumes:
+      - mongo_data:/data/db
+
+networks:
+  MoodymapNetwork:
+    driver: bridge
+
+volumes:
+  mongo_data:

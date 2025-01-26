@@ -1,0 +1,17 @@
+FROM python:3.9-slim
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the model, requirements, and application files into the container
+COPY . /app
+
+# Install dependencies
+RUN pip install --upgrade pip
+RUN pip install flask tensorflow pillow opencv-python-headless
+
+# Expose port for the Flask app
+EXPOSE 5000
+
+# Run the Flask app
+CMD ["python", "model.py"]

@@ -24,16 +24,23 @@ export class AuthenticationGuard implements CanActivate {
     }
 
     try {
-      const payload = this.jwtService.verify(token);
-      request.userId = payload.userId;
+      const payload = this.jwtService.verify(token, { secret: process.env.JWT_SECRET });
+      request.user = { userId: payload.userId }; 
     } catch (e) {
-      Logger.error(e.message);
+      Logger.error(`JWT verification failed: ${e.message}`);
       throw new UnauthorizedException('Invalid Token');
     }
     return true;
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
-    return request.headers.authorization?.split(' ')[1];
+    const authHeader = request.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      Logger.error('Authorization header missing or malformed');
+      throw new UnauthorizedException('Invalid token format');
+    }
+    return authHeader.split(' ')[1];
   }
+  
+  
 }
